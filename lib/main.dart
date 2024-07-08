@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:web_socket_channel/io.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,8 +36,215 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
+
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  late IOWebSocketChannel channel;
+  String assignmentName = "Sample Assignment 01";
+  String studentIndex = 'Sample Index';
+  String studentName = 'Sample Name';
+  String remainingTime = 'Sample Time Left : hours:minutes:seconds';
+  List<String> announcements = [
+    "Sample Announcement 1",
+    "Sample Announcement 2",
+    "Sample Announcement 3",
+    "Sample Announcement 4"
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    checkPCName();
+  }
+
+  Future<void> setPCName(String pcName) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('pcName', pcName);
+  }
+
+  Future<String?> getPCName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('pcName');
+  }
+
+  Future<void> checkPCName() async {
+    String? pcName = await getPCName();
+    if (pcName == null) {
+      // Ask user to set PC name during installation
+      await showPCNameDialog();
+    } else {
+      connectToWebSocket(pcName);
+    }
+  }
+
+  Future<void> showPCNameDialog() async {
+    String? pcName = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        TextEditingController controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Enter PC Name'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(hintText: 'PC Name'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop(controller.text);
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (pcName != null && pcName.isNotEmpty) {
+      await setPCName(pcName);
+      connectToWebSocket(pcName);
+    }
+  }
+
+  void connectToWebSocket(String pcName) {
+    channel =
+        IOWebSocketChannel.connect('ws://d688-212-104-231-218.ngrok-free.app');
+
+    // Send PC name to backend
+    channel.sink.add(pcName);
+
+    // Listen for messages from the WebSocket
+    channel.stream.listen((message) {
+      var data = message.split(',');
+      if (data[0] == 'activate') {
+        String studentIndex = data[1];
+        String examId = data[2];
+        confirmReceipt();
+        fetchExamDetails(examId);
+        fetchStudentDetails(studentIndex);
+      } else if (data[0] == 'deactivate') {
+        resetToSampleData();
+        // You can add a confirmation log here if needed
+        print('Received deactivate message');
+        // Send confirmation message to backend
+        channel.sink.add('deactivate_received');
+      } else if (data[0] == 'timer') {
+        updateTimer(data[1]); // data[1] is the timer value in seconds
+        print('Received timer');
+        channel.sink.add('timer_received');
+      }
+    });
+  }
+
+  String formatTime(int seconds) {
+    int hours = seconds ~/ 3600;
+    int minutes = (seconds % 3600) ~/ 60;
+    int secs = seconds % 60;
+
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
+  void updateTimer(String seconds) {
+    int timerInSeconds = int.parse(seconds);
+    setState(() {
+      remainingTime = 'Time Left : ${formatTime(timerInSeconds)}';
+    });
+  }
+
+  void resetToSampleData() {
+    setState(() {
+      assignmentName = "Sample Assignment 01";
+      studentIndex = 'Sample Index';
+      studentName = 'Sample Name';
+      remainingTime = 'Sample Time Left : hours:minutes:seconds';
+      announcements = [
+        "Sample Announcement 1",
+        "Sample Announcement 2",
+        "Sample Announcement 3",
+        "Sample Announcement 4"
+      ];
+    });
+  }
+
+  void confirmReceipt() {
+    print(
+        'Received activate message'); // This will print to the console as a confirmation
+
+    channel.sink
+        .add('activate_received'); // Send confirmation message to backend
+  }
+
+  void fetchExamDetails(String examId) async {
+    final url =
+        'https://d688-212-104-231-218.ngrok-free.app/api/v1/exams/$examId';
+    final headers = {
+      'Authorization': 'Bearer "ngrok-skip-browser-warning": "69420"',
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      var response = await http.get(Uri.parse(url), headers: headers);
+
+      if (response.statusCode == 200) {
+        var jsonData = jsonDecode(response.body);
+
+        // Adjusted to update state variables
+        setState(() {
+          assignmentName = jsonData['module'];
+          announcements = jsonData['instructions'] != null
+              ? jsonData['instructions'].split(',').toList()
+              : [];
+        });
+
+        print('Exam details fetched successfully: $jsonData');
+      } else {
+        print(
+            'Failed to load exam details. Status code: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Failed to load exam details: $error');
+    }
+  }
+
+  Future<void> fetchStudentDetails(String studentId) async {
+    final url =
+        'https://d688-212-104-231-218.ngrok-free.app/api/v1/students/$studentId';
+    final headers = {
+      'Authorization': 'Bearer "ngrok-skip-browser-warning": "69420"',
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      var response = await http.get(Uri.parse(url), headers: headers);
+
+      if (response.statusCode == 200) {
+        var jsonData = jsonDecode(response.body);
+
+        // Adjusted to update state variables
+        setState(() {
+          studentIndex = jsonData['stu_id'];
+          studentName = jsonData['name'];
+        });
+        print('Student details fetched successfully: $jsonData');
+      } else {
+        print(
+            'Failed to load student details. Status code: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Failed to load student details: $error');
+    }
+  }
+
+  @override
+  void dispose() {
+    channel.sink.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +261,7 @@ class MyHomePage extends StatelessWidget {
             ),
             const SizedBox(width: 20),
             Text(
-              "IS 1101 - Assignment 01",
+              assignmentName,
               style: Theme.of(context).textTheme.displayLarge,
             ),
           ],
@@ -81,21 +292,12 @@ class MyHomePage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const ListTile(
-                  title: Text(
-                      "• To access the assignment pdf file, go to: This PC > Public > Assignment"),
-                ),
-                const ListTile(
-                  title: Text(
-                      "• Always look at the marks allocated and pay attention to the key words in the question before start answering the question paper."),
-                ),
-                const ListTile(
-                  title: Text(
-                      "• This is a closed book examination. Thus, you are STRICTLY PROHIBITED bringing any printed, handwritten, digital or any form of materials to the examination center."),
-                ),
-                const ListTile(
-                  title: Text("• Use of mobile phones are NOT ALLOWED."),
-                )
+                for (var announcement in announcements)
+                  ListTile(
+                    leading:
+                        Icon(Icons.brightness_1, size: 10), // Bullet point icon
+                    title: Text(announcement),
+                  )
               ],
             ),
           ),
@@ -120,7 +322,7 @@ class MyHomePage extends StatelessWidget {
                       ],
                     ),
                     child: Text(
-                      '224049K',
+                      studentIndex,
                       style: Theme.of(context).textTheme.displayLarge,
                     ),
                   ),
@@ -141,7 +343,7 @@ class MyHomePage extends StatelessWidget {
                       ],
                     ),
                     child: Text(
-                      'T.S. Edirisinghe',
+                      studentName,
                       style: Theme.of(context).textTheme.displayMedium,
                     ),
                   ),
@@ -162,7 +364,7 @@ class MyHomePage extends StatelessWidget {
                       ],
                     ),
                     child: Text(
-                      'Time Left : 1:12:36',
+                      remainingTime,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
