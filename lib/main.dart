@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:web_socket_channel/io.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -63,13 +64,25 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> setPCName(String pcName) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('pcName', pcName);
+    final directory = await getApplicationDocumentsDirectory();
+    final path = directory.path;
+    print(
+        'Saving PC name to: $path/pc_name.txt'); // Add this line to print the path
+    final file = File('${directory.path}/pc_name.txt');
+    await file.writeAsString(pcName);
   }
 
   Future<String?> getPCName() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('pcName');
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/pc_name.txt');
+      if (await file.exists()) {
+        return await file.readAsString();
+      }
+    } catch (e) {
+      print("Error reading PC name: $e");
+    }
+    return null;
   }
 
   Future<void> checkPCName() async {
@@ -294,8 +307,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 const SizedBox(height: 10),
                 for (var announcement in announcements)
                   ListTile(
-                    leading:
-                        Icon(Icons.brightness_1, size: 10), // Bullet point icon
+                    leading: const Icon(Icons.brightness_1,
+                        size: 10), // Bullet point icon
                     title: Text(announcement),
                   )
               ],
