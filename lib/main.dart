@@ -126,7 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void connectToWebSocket(String pcName) {
     channel =
-        IOWebSocketChannel.connect('ws://d688-212-104-231-218.ngrok-free.app');
+        IOWebSocketChannel.connect('ws://bcca-112-135-76-91.ngrok-free.app');
 
     // Send PC name to backend
     channel.sink.add(pcName);
@@ -194,7 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void fetchExamDetails(String examId) async {
     final url =
-        'https://d688-212-104-231-218.ngrok-free.app/api/v1/exams/$examId';
+        'https://bcca-112-135-76-91.ngrok-free.app/api/v1/exams/$examId';
     final headers = {
       'Authorization': 'Bearer "ngrok-skip-browser-warning": "69420"',
       'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> fetchStudentDetails(String studentId) async {
     final url =
-        'https://d688-212-104-231-218.ngrok-free.app/api/v1/students/$studentId';
+        'https://bcca-112-135-76-91.ngrok-free.app/api/v1/students/$studentId';
     final headers = {
       'Authorization': 'Bearer "ngrok-skip-browser-warning": "69420"',
       'Content-Type': 'application/json',
