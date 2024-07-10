@@ -1,4 +1,5 @@
 ![Screenshot 2024-07-09 213927](https://github.com/tharinedirisinghe/client-side-desktop-app/assets/136303928/b05590ee-1521-441d-bc55-182c8d82495c)
+
 ![Screenshot 2024-07-09 214005](https://github.com/tharinedirisinghe/client-side-desktop-app/assets/136303928/8bd6ddab-27c5-4a2d-8df7-0e614550fdf4)
 
 # flutter_app
