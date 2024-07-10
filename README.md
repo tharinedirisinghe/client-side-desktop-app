@@ -1,6 +1,6 @@
-![Screenshot 2024-07-09 213927](https://github.com/tharinedirisinghe/client-side-desktop-app/assets/136303928/2519ede8-ed09-4c52-92fb-a7a3c8b27a65)
+![Screenshot 2024-07-09 213927](https://github.com/tharinedirisinghe/client-side-desktop-app/assets/136303928/b05590ee-1521-441d-bc55-182c8d82495c)
 
-![Screenshot 2024-07-09 214005](https://github.com/tharinedirisinghe/client-side-desktop-app/assets/136303928/948ba1ab-de5c-4d04-a035-c64bb22de547)
+![Screenshot 2024-07-09 214005](https://github.com/tharinedirisinghe/client-side-desktop-app/assets/136303928/8bd6ddab-27c5-4a2d-8df7-0e614550fdf4)
 
 # flutter_app
 
