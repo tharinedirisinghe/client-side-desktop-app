@@ -118,7 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
       },
     );
 
-    if (pcName != null && pcName.isNotEmpty) {
+    if (pcName.isNotEmpty) {
       await setPCName(pcName);
       connectToWebSocket(pcName);
     }
